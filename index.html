@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Senin İçin</title>
+<style>
+  :root{
+    --bg:#ffffff;
+    --pink:#ff7fbf;
+    --dark:#2b1b2b;
+  }
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial,Helvetica,sans-serif;background:var(--bg);color:var(--dark);overflow:hidden}
+  .stage{position:relative;width:100%;height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(to bottom,#fff 0%, #fff 55%, #ffeef8 100%);}
+  /* PALACE SCENE */
+  .palace-wrap{position:relative;width:70vmin;height:50vmin;max-width:1100px;max-height:800px;transition:transform 1s ease;transform-origin:center center;}
+  svg.palace{width:100%;height:100%;display:block;pointer-events:none;}
+  /* approach animation */
+  .palace-wrap.approach{animation:palace-approach 2.2s forwards ease-in-out;}
+  @keyframes palace-approach{
+    0%{transform:scale(1) translateY(0);}
+    60%{transform:scale(1.45) translateY(-8%);}
+    100%{transform:scale(2.5) translateY(-20%);}
+  }
+
+  /* doors overlay that will cover screen */
+  .doors-overlay{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:40;pointer-events:none;
+  }
+  .door{
+    width:50%;height:100%;background:linear-gradient(#c64f84,#7a2141);display:inline-block;box-shadow:inset -10px 0 40px rgba(0,0,0,0.25);
+    transform-origin:center left;transition:transform 1s ease;pointer-events:auto;cursor:pointer;
+  }
+  .door.right{transform-origin:center right;box-shadow:inset 10px 0 40px rgba(0,0,0,0.25);}
+  .doors-overlay.closed .door.left{transform:translateX(-0%);}
+  .doors-overlay.closed .door.right{transform:translateX(0%);}
+  .doors-overlay.open .door.left{transform:translateX(-110%);}
+  .doors-overlay.open .door.right{transform:translateX(110%);}
+  .door-inner{
+    height:100%;display:flex;align-items:center;justify-content:center;color:#ffdce7;font-size:clamp(20px,3vw,36px);font-weight:700;letter-spacing:1px;
+    user-select:none;
+  }
+
+  /* knock prompt */
+  .knock-box{
+    position:fixed;left:50%;transform:translateX(-50%);bottom:12vh;background:rgba(255,255,255,0.95);padding:18px 26px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.12);z-index:60;
+    font-size:18px;font-weight:700;color:var(--dark);cursor:pointer;
+  }
+
+  /* interior scene (hidden initially) */
+  .interior{
+    position:fixed;inset:0;background:linear-gradient(180deg,#fdeef7 0%, #ffdff0 40%, #fff 100%);display:flex;align-items:center;justify-content:center;z-index:50;opacity:0;pointer-events:none;
+    transition:opacity .6s ease;
+  }
+  .interior.show{opacity:1;pointer-events:auto;}
+  .room{
+    width:min(1000px,90%);height:min(600px,85%);border-radius:12px;background:linear-gradient(#fff,#fff);box-shadow:0 30px 70px rgba(0,0,0,0.12);display:flex;flex-direction:column;align-items:center;padding:36px;position:relative;overflow:hidden;
+  }
+
+  /* Throne */
+  .throne{
+    width:60%;max-width:600px;height:310px;background:linear-gradient(180deg,#ffd6ea,#ffb6dd);border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:40px;box-shadow:0 10px 30px rgba(0,0,0,0.12);
+  }
+  .throne .seat{width:70%;height:90px;background:#ff8cc2;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;color:white;font-size:20px}
+  .gift{
+    width:110px;height:110px;border-radius:12px;background:linear-gradient(180deg,#ffffff,#ffd6ea);position:relative;margin-top:-22px;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,0.12);display:flex;align-items:center;justify-content:center;flex-direction:column;
+  }
+  .gift .ribbon{
+    position:absolute;inset:22px auto auto 22px;width:66px;height:66px;background:var(--pink);border-radius:6px;transform:rotate(45deg);box-shadow:inset 0 -4px 8px rgba(0,0,0,0.08);
+  }
+  .gift .bow{
+    position:absolute;top:8px;width:36px;height:28px;background:var(--pink);border-radius:6px;transform:translateY(-12px);
+  }
+  .gift:active{transform:translateY(2px) scale(.98)}
+  .gift-open{animation:open-gift .7s ease forwards;}
+  @keyframes open-gift{0%{transform:scale(1)}50%{transform:scale(1.04)}100%{transform:scale(1)}}
+
+  /* modal note */
+  .note-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:80;pointer-events:none;opacity:0}
+  .note-modal.show{opacity:1;pointer-events:auto}
+  .note-card{width:min(720px,92%);background:#fff;border-radius:14px;padding:28px;box-shadow:0 30px 90px rgba(0,0,0,0.25);transform:translateY(20px);transition:transform .3s ease}
+  .note-modal.show .note-card{transform:translateY(0)}
+  .note-card h2{margin:0 0 12px 0;font-size:22px;color:var(--dark)}
+  .note-text{font-size:18px;line-height:1.5;color:#111;margin-bottom:16px;white-space:pre-wrap}
+  .note-actions{display:flex;gap:10px;justify-content:flex-end}
+  .btn{padding:10px 14px;border-radius:10px;border:0;font-weight:700;cursor:pointer}
+  .btn.primary{background:var(--pink);color:white}
+  .btn.ghost{background:transparent;border:1px solid #ddd}
+
+  /* small helper */
+  .credit{position:fixed;left:12px;bottom:12px;font-size:12px;color:#333;opacity:.6;z-index:10}
+  /* responsive tweaks */
+  @media (max-width:640px){
+    .palace-wrap{width:90vmin;height:54vmin}
+    .knock-box{font-size:16px;padding:12px 18px;bottom:8vh}
+    .throne{height:240px}
+    .gift{width:90px;height:90px}
+  }
+</style>
+</head>
+<body>
+
+<div class="stage" aria-hidden="false">
+  <div class="palace-wrap" id="palaceWrap">
+    <!-- simple decorative palace SVG -->
+    <svg class="palace" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Pembe saray">
+      <defs>
+        <linearGradient id="g1" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#ffd6ea"/>
+          <stop offset="1" stop-color="#ffb6dd"/>
+        </linearGradient>
+        <linearGradient id="g2" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#ff9ccf"/>
+          <stop offset="1" stop-color="#ff7fbf"/>
+        </linearGradient>
+      </defs>
+
+      <!-- ground -->
+      <rect x="0" y="600" width="1200" height="200" fill="#fff0f6"/>
+      <!-- towers -->
+      <g id="castle" transform="translate(0,0)">
+        <rect x="150" y="320" width="90" height="260" fill="url(#g1)" rx="12"/>
+        <rect x="960" y="320" width="90" height="260" fill="url(#g1)" rx="12"/>
+        <!-- central building -->
+        <rect x="330" y="260" width="540" height="320" fill="url(#g2)" rx="18"/>
+        <!-- windows -->
+        <g fill="#fff4fb" opacity="0.9">
+          <rect x="400" y="320" width="60" height="80" rx="8"/>
+          <rect x="740" y="320" width="60" height="80" rx="8"/>
+          <rect x="520" y="340" width="60" height="80" rx="8"/>
+        </g>
+        <!-- doors (center) -->
+        <g id="doors" transform="translate(520,440)">
+          <rect x="-80" y="0" width="150" height="160" rx="10" fill="#7a2141"/>
+          <rect x="80" y="0" width="150" height="160" rx="10" fill="#7a2141"/>
+        </g>
+        <!-- flags -->
+        <polygon points="260,310 260,280 300,295" fill="#ff4fa0"/>
+        <polygon points="1040,310 1040,280 1000,295" fill="#ff4fa0"/>
+      </g>
+    </svg>
+  </div>
+</div>
+
+<!-- doors overlay that will animate to full screen -->
+<div class="doors-overlay closed" id="doorsOverlay" aria-hidden="false">
+  <div class="door left" id="doorLeft"><div class="door-inner">Kapıyı çalın prenses 👑</div></div>
+  <div class="door right" id="doorRight"><div class="door-inner">Kapıyı çalın prenses 👑</div></div>
+</div>
+
+<button class="knock-box" id="knockBtn" title="Kapıyı çal">Kapıyı çalın — Prenses</button>
+
+<!-- interior (hidden until doors open) -->
+<div class="interior" id="interior">
+  <div class="room" role="dialog" aria-modal="true" aria-label="Taht odası">
+    <div style="position:absolute;left:20px;top:18px;font-weight:700;color:#b23c72">Sana özel</div>
+    <div class="throne" role="img" aria-label="Taht">
+      <div style="font-size:28px;font-weight:900;color:#5b1533;margin-bottom:8px">TAHT</div>
+      <div class="seat">Seni Bekliyorum</div>
+    </div>
+
+    <div style="margin-top:18px">
+      <div class="gift" id="gift" tabindex="0" role="button" aria-label="Hediye kutusunu aç">
+        <div class="bow" aria-hidden="true"></div>
+        <div class="ribbon" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <div style="position:absolute;right:18px;top:18px">
+      <button class="btn ghost" id="closeInterior">Kapat</button>
+    </div>
+  </div>
+</div>
+
+<!-- modal for note -->
+<div class="note-modal" id="noteModal" aria-hidden="true">
+  <div class="note-card" role="document">
+    <h2>Sevgili Prensesim,</h2>
+    <div class="note-text" id="noteText">
+      Buraya kendi özel notunu yaz. (Bu alanı doğrudan HTML içinde değiştirebilirsin.)
+    </div>
+    <div class="note-actions">
+      <button class="btn ghost" id="editNote">Düzenle</button>
+      <button class="btn primary" id="closeNote">Kapat</button>
+    </div>
+  </div>
+</div>
+
+<div class="credit">Hazır site — ❤️</div>
+
+<script>
+  // Elements
+  const palaceWrap = document.getElementById('palaceWrap');
+  const doorsOverlay = document.getElementById('doorsOverlay');
+  const knockBtn = document.getElementById('knockBtn');
+  const interior = document.getElementById('interior');
+  const gift = document.getElementById('gift');
+  const noteModal = document.getElementById('noteModal');
+  const closeNote = document.getElementById('closeNote');
+  const editNote = document.getElementById('editNote');
+  const noteText = document.getElementById('noteText');
+  const closeInterior = document.getElementById('closeInterior');
+
+  // 1) On first click: palace approaches, then doors close to cover screen and show "Kapıyı çalın prenses"
+  let clicked = false;
+  knockBtn.addEventListener('click', triggerSequence);
+  // also let clicking door trigger interior
+  document.getElementById('doorLeft').addEventListener('click', openDoor);
+  document.getElementById('doorRight').addEventListener('click', openDoor);
+
+  function triggerSequence(){
+    if (clicked) return;
+    clicked = true;
+    palaceWrap.classList.add('approach');
+    // after approach, close doors (they already are closed overlay covering screen text is visible)
+    setTimeout(()=> {
+      // animate doors to fill screen by adding class that slides them inward (they already cover center but we'll keep the prompt)
+      doorsOverlay.classList.remove('closed');
+      doorsOverlay.classList.add('open');
+      // show knock prompt text over doors (we keep the small button)
+      setTimeout(()=> {
+        // reveal persistent knock button (already visible)
+        // now allow clicking doors to enter
+        doorsOverlay.style.pointerEvents = 'auto';
+      }, 350);
+    }, 2200);
+  }
+
+  // 2) When doors clicked -> show interior
+  function openDoor(){
+    // close overlay gracefully
+    doorsOverlay.classList.add('open'); // if not already
+    // hide stage visuals to prevent focus issues
+    setTimeout(()=> {
+      interior.classList.add('show');
+      // hide doors overlay softly
+      doorsOverlay.style.opacity = '0';
+      doorsOverlay.style.pointerEvents = 'none';
+      // stop palace animation
+      palaceWrap.style.display = 'none';
+    }, 600);
+  }
+
+  // close interior
+  closeInterior.addEventListener('click', ()=> {
+    interior.classList.remove('show');
+    doorsOverlay.style.opacity = '1';
+    palaceWrap.style.display = 'block';
+    // allow re-trigger if you want
+    clicked = false;
+    palaceWrap.classList.remove('approach');
+    doorsOverlay.classList.remove('open');
+    doorsOverlay.classList.add('closed');
+  });
+
+  // Gift click -> show note modal
+  gift.addEventListener('click', ()=> {
+    gift.classList.add('gift-open');
+    noteModal.classList.add('show');
+    noteModal.setAttribute('aria-hidden','false');
+    // small pulse
+    setTimeout(()=> gift.classList.remove('gift-open'), 800);
+  });
+  gift.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); gift.click(); }});
+
+  // close note
+  closeNote.addEventListener('click', ()=> {
+    noteModal.classList.remove('show');
+    noteModal.setAttribute('aria-hidden','true');
+  });
+
+  // edit note inline: prompt the user (for quick editing)
+  editNote.addEventListener('click', ()=> {
+    const current = noteText.textContent.trim();
+    const newText = prompt('Notunu buraya yaz (satır aralarını korur):', current);
+    if(newText !== null){
+      noteText.textContent = newText;
+    }
+  });
+
+  // Accessibility: close modal with Escape
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape'){
+      if(noteModal.classList.contains('show')) { noteModal.classList.remove('show'); noteModal.setAttribute('aria-hidden','true'); }
+      else if(interior.classList.contains('show')) { interior.classList.remove('show'); doorsOverlay.style.opacity = '1'; palaceWrap.style.display = 'block'; }
+    }
+  });
+
+  // Optional: let user click outside note to close
+  noteModal.addEventListener('click', (e)=> {
+    if(e.target === noteModal) { noteModal.classList.remove('show'); noteModal.setAttribute('aria-hidden','true'); }
+  });
+</script>
+</body>
+</html>
